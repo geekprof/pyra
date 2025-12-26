@@ -1,0 +1,865 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+  <title>Pyraminx (Mobile Portrait) + Solve V</title>
+  <style>
+    :root{
+      --bg:#121212;
+      --panel:#1e1e1e;
+      --panel2:#262626;
+      --txt:#f2f2f2;
+      --muted:#c9c9c9;
+      --btn:#e6e6e6;
+      --btnHover:#ffffff;
+      --border:#3a3a3a;
+    }
+    html,body{height:100%;}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--txt);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .wrap{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      padding:12px;
+      box-sizing:border-box;
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    .card{
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:12px;
+      box-sizing:border-box;
+    }
+
+    .titleRow{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:8px;
+    }
+    h1{
+      margin:0;
+      font-size:16px;
+      font-weight:800;
+      letter-spacing:.2px;
+    }
+    .subtitle{
+      font-size:12px;
+      color:var(--muted);
+      margin:0;
+    }
+
+    canvas{
+      width:100%;
+      height:auto;
+      display:block;
+      border:1px solid var(--border);
+      border-radius:14px;
+      background:#0f0f0f;
+      touch-action: manipulation;
+    }
+
+    details{
+      border-radius:14px;
+      overflow:hidden;
+      border:1px solid var(--border);
+      background:var(--panel);
+    }
+    summary{
+      list-style:none;
+      cursor:pointer;
+      padding:12px;
+      font-weight:800;
+      font-size:14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      user-select:none;
+    }
+    summary::-webkit-details-marker{display:none;}
+    .chev{font-size:14px;color:var(--muted);}
+    details[open] .chev{transform:rotate(180deg);}
+    .detailsBody{padding:0 12px 12px 12px;}
+
+    .gridMoves{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap:10px;
+      margin-top:10px;
+    }
+
+    button{
+      cursor:pointer;
+      border:1px solid #000;
+      background:var(--btn);
+      color:#000;
+      border-radius:12px;
+      padding:12px 0;
+      font-weight:900;
+      font-size:16px;
+      user-select:none;
+      touch-action: manipulation;
+    }
+    button:hover{background:var(--btnHover);}
+    button:active{transform: translateY(1px);}
+
+    .wideRow{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      margin-top:12px;
+    }
+
+    .row{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-top:12px;
+      font-size:13px;
+      color:var(--muted);
+    }
+    input[type="number"]{
+      width:84px;
+      padding:8px 10px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:var(--panel2);
+      color:var(--txt);
+      outline:none;
+      font-size:14px;
+    }
+
+    .small{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.35;
+      margin-top:10px;
+    }
+
+    .status{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:6px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .faceBlock{
+      background:var(--panel2);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:10px;
+      margin-top:10px;
+    }
+    .faceTitle{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-weight:900;
+      font-size:13px;
+      margin-bottom:6px;
+    }
+    .dot{
+      width:10px; height:10px; border-radius:50%;
+      border:1px solid rgba(0,0,0,.6);
+      display:inline-block;
+    }
+    ol{
+      margin:0;
+      padding-left:18px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size:12.5px;
+    }
+    li{margin:4px 0;}
+    .dash{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color:var(--muted);
+      font-size:12.5px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <div class="card">
+      <div class="titleRow">
+        <h1>Pyraminx (mobile) + Solve V</h1>
+        <p class="subtitle">Canvas responsive • portrait</p>
+      </div>
+      <canvas id="cv"></canvas>
+      <div class="status">Astuce : tu peux replier/ouvrir les sections ci-dessous.</div>
+    </div>
+
+    <details open>
+      <summary>
+        Contrôles
+        <span class="chev">▾</span>
+      </summary>
+      <div class="detailsBody">
+        <div class="gridMoves" id="moveGrid"></div>
+
+        <div class="wideRow">
+          <button id="resetBtn">RESET</button>
+          <button id="solveBtn">SOLVE</button>
+        </div>
+
+        <div class="row">
+          <span>Profondeur max</span>
+          <input id="depthInput" type="number" min="0" max="14" value="10" />
+        </div>
+
+        <div class="small">
+          <div><b>V</b> sur une face :</div>
+          <div>- les <b>3 centres</b> de la face à la <b>couleur de la face</b></div>
+          <div>- au moins <b>2 arêtes / 3</b> de cette face <b>parfaitement résolues</b> (perm + orient)</div>
+          <div style="margin-top:6px;">Le solveur ignore les tips (u/l/r/b), car elles n’influencent pas centres/arêtes.</div>
+        </div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>
+        Résultats SOLVE
+        <span class="chev">▾</span>
+      </summary>
+      <div class="detailsBody">
+        <div class="status" id="status">—</div>
+        <div id="results"></div>
+      </div>
+    </details>
+
+  </div>
+
+<script>
+(() => {
+  const DARK_GRAY = [50,50,50];
+
+  // Couleurs (rouge/bleu inversés comme demandé)
+  // Faces : 0=Front (Vert), 1=Right (Bleu), 2=Left (Rouge), 3=Down (Jaune)
+  const COLORS = [
+    [0,155,72],
+    [0,70,173],
+    [183,18,52],
+    [255,213,0]
+  ];
+
+  const FACE_NAMES = {
+    0: "Front (Vert)",
+    1: "Right (Bleu)",
+    2: "Left (Rouge)",
+    3: "Down (Jaune)"
+  };
+
+  const EDGE_NAMES = {0:"FR",1:"FL",2:"FD",3:"RL",4:"RD",5:"LD"};
+
+  // Solveur: quota par frame (mobile-friendly)
+  const SOLVER_NODES_PER_FRAME = 2200;
+
+  const rgb = (c) => `rgb(${c[0]},${c[1]},${c[2]})`;
+  const mod = (a,m) => ((a % m) + m) % m;
+
+  function inverseMap(m){
+    const inv = new Array(m.length).fill(0);
+    for(let i=0;i<m.length;i++) inv[m[i]] = i;
+    return inv;
+  }
+
+  class PyraminxState{
+    static LOC_FACES = {
+      0:[0,1], 1:[0,2], 2:[0,3],
+      3:[1,2], 4:[1,3], 5:[2,3]
+    };
+    static BASE_MAPS = {
+      0:[0,1,2],
+      1:[0,2,3],
+      2:[0,1,3],
+      3:[1,2,3]
+    };
+    static MOVED_EDGE_LOCS = {
+      'U':[0,1,3],
+      'L':[1,2,5],
+      'R':[0,2,4],
+      'B':[3,4,5]
+    };
+    static FACE_MAP_CW = {
+      'U':[2,0,1,3],
+      'L':[3,1,0,2],
+      'R':[1,3,2,0],
+      'B':[0,2,3,1]
+    };
+    static VERTEX_IDX = {'U':0,'L':1,'R':2,'B':3};
+
+    constructor(){
+      this.FACESET_TO_LOC = {};
+      for(const locStr in PyraminxState.LOC_FACES){
+        const loc = parseInt(locStr,10);
+        const [a,b] = PyraminxState.LOC_FACES[loc];
+        const x = Math.min(a,b), y = Math.max(a,b);
+        this.FACESET_TO_LOC[`${x}-${y}`] = loc;
+      }
+      this.reset();
+    }
+
+    reset(){
+      this.edges_perm = [0,1,2,3,4,5];
+      this.edges_orient = [0,0,0,0,0,0];
+      this.centers = [0,0,0,0];
+      this.tips = [0,0,0,0];
+    }
+
+    clone(){
+      const ns = new PyraminxState();
+      ns.edges_perm = this.edges_perm.slice();
+      ns.edges_orient = this.edges_orient.slice();
+      ns.centers = this.centers.slice();
+      ns.tips = this.tips.slice();
+      return ns;
+    }
+
+    _rotateVertexOrientation(ori, vertexIdx, faceMap){
+      const baseFaces = PyraminxState.BASE_MAPS[vertexIdx];
+      const sticker0 = baseFaces[ori % 3];
+      const newFace = faceMap[sticker0];
+      return baseFaces.indexOf(newFace);
+    }
+
+    _applyFaceMapToEdges(faceMap, movedLocs){
+      const newPerm = this.edges_perm.slice();
+      const newOr   = this.edges_orient.slice();
+
+      for(const loc of movedLocs){
+        const piece = this.edges_perm[loc];
+        const ori   = this.edges_orient[loc];
+
+        const [a,b] = PyraminxState.LOC_FACES[loc];
+        const sticker0 = (ori === 0) ? a : b;
+        const sticker1 = (ori === 0) ? b : a;
+
+        const s0 = faceMap[sticker0];
+        const s1 = faceMap[sticker1];
+
+        const x = Math.min(s0,s1), y = Math.max(s0,s1);
+        const destLoc = this.FACESET_TO_LOC[`${x}-${y}`];
+
+        const [destA,] = PyraminxState.LOC_FACES[destLoc];
+        const newOriVal = (s0 === destA) ? 0 : 1;
+
+        newPerm[destLoc] = piece;
+        newOr[destLoc] = newOriVal;
+      }
+
+      this.edges_perm = newPerm;
+      this.edges_orient = newOr;
+    }
+
+    applyMove(moveName){
+      const prime = moveName.endsWith("'");
+      const base = moveName[0];
+      const isTip = (base.toLowerCase() === base);
+      const mv = base.toUpperCase();
+
+      if(!(mv in PyraminxState.FACE_MAP_CW)) return;
+
+      let faceMap = PyraminxState.FACE_MAP_CW[mv];
+      if(prime) faceMap = inverseMap(faceMap);
+
+      const v = PyraminxState.VERTEX_IDX[mv];
+
+      this.tips[v] = this._rotateVertexOrientation(this.tips[v], v, faceMap);
+      if(isTip) return;
+
+      this.centers[v] = this._rotateVertexOrientation(this.centers[v], v, faceMap);
+      this._applyFaceMapToEdges(faceMap, PyraminxState.MOVED_EDGE_LOCS[mv]);
+    }
+  }
+
+  const BASE_MAPS_COL = {
+    0:[0,1,2], 1:[0,2,3], 2:[0,1,3], 3:[1,2,3]
+  };
+
+  function getTipColor(state, tipIdx, faceViewIdx){
+    const ori = state.tips[tipIdx];
+    const cols = BASE_MAPS_COL[tipIdx];
+    return COLORS[cols[mod(faceViewIdx - ori, 3)]];
+  }
+  function getCenterColor(state, centerIdx, faceViewIdx){
+    const ori = state.centers[centerIdx];
+    const cols = BASE_MAPS_COL[centerIdx];
+    return COLORS[cols[mod(faceViewIdx - ori, 3)]];
+  }
+  function getEdgeColor(state, edgeLocIdx, sideIdx){
+    const pieceIdx = state.edges_perm[edgeLocIdx];
+    const pieceOrient = state.edges_orient[edgeLocIdx];
+    const pieceColors = [[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]];
+    const cols = pieceColors[pieceIdx];
+    return COLORS[cols[sideIdx ^ pieceOrient]];
+  }
+
+  function getFaceColors(state, faceId){
+    const c = new Array(9).fill(null);
+
+    if(faceId === 0){
+      c[0]=getTipColor(state,0,0);
+      c[1]=getEdgeColor(state,1,0);
+      c[2]=getCenterColor(state,0,0);
+      c[3]=getEdgeColor(state,0,0);
+      c[4]=getTipColor(state,1,0);
+      c[5]=getCenterColor(state,1,0);
+      c[6]=getEdgeColor(state,2,0);
+      c[7]=getCenterColor(state,2,0);
+      c[8]=getTipColor(state,2,0);
+    } else if(faceId === 1){
+      c[0]=getTipColor(state,0,1);
+      c[1]=getEdgeColor(state,0,1);
+      c[2]=getCenterColor(state,0,1);
+      c[3]=getEdgeColor(state,3,0);
+      c[4]=getTipColor(state,2,1);
+      c[5]=getCenterColor(state,2,1);
+      c[6]=getEdgeColor(state,4,0);
+      c[7]=getCenterColor(state,3,0);
+      c[8]=getTipColor(state,3,0);
+    } else if(faceId === 2){
+      c[0]=getTipColor(state,0,2);
+      c[1]=getEdgeColor(state,3,1);
+      c[2]=getCenterColor(state,0,2);
+      c[3]=getEdgeColor(state,1,1);
+      c[4]=getTipColor(state,3,1);
+      c[5]=getCenterColor(state,3,1);
+      c[6]=getEdgeColor(state,5,0);
+      c[7]=getCenterColor(state,1,1);
+      c[8]=getTipColor(state,1,1);
+    } else if(faceId === 3){
+      c[0]=getTipColor(state,1,2);
+      c[1]=getEdgeColor(state,5,1);
+      c[2]=getCenterColor(state,1,2);
+      c[3]=getEdgeColor(state,2,1);
+      c[4]=getTipColor(state,3,2);
+      c[5]=getCenterColor(state,3,2);
+      c[6]=getEdgeColor(state,4,1);
+      c[7]=getCenterColor(state,2,2);
+      c[8]=getTipColor(state,2,2);
+    }
+
+    return c;
+  }
+
+  // ----- DESSIN -----
+  function triPoints(cx, cy, up, s){
+    const h = s * Math.sqrt(3) / 2;
+    if(up){
+      return [[cx, cy-(2/3)*h],[cx-s/2, cy+(1/3)*h],[cx+s/2, cy+(1/3)*h]];
+    }
+    return [[cx, cy+(2/3)*h],[cx-s/2, cy-(1/3)*h],[cx+s/2, cy-(1/3)*h]];
+  }
+
+  function drawTriangle(ctx, cx, cy, up, color, s){
+    const p = triPoints(cx, cy, up, s);
+    ctx.beginPath();
+    ctx.moveTo(p[0][0], p[0][1]);
+    ctx.lineTo(p[1][0], p[1][1]);
+    ctx.lineTo(p[2][0], p[2][1]);
+    ctx.closePath();
+    ctx.fillStyle = rgb(color);
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgb(0,0,0)";
+    ctx.stroke();
+  }
+
+  function drawFace(ctx, x, y, colors, inverted, s){
+    const h = s * Math.sqrt(3) / 2;
+    const offUp = (2/3)*h;
+    const offDown = (1/3)*h;
+
+    if(!inverted){
+      drawTriangle(ctx, x, y + offUp, true, colors[0], s);
+
+      const y2 = y + h;
+      drawTriangle(ctx, x - s/2, y2 + offUp, true, colors[1], s);
+      drawTriangle(ctx, x,       y2 + offDown, false, colors[2], s);
+      drawTriangle(ctx, x + s/2, y2 + offUp, true, colors[3], s);
+
+      const y3 = y + 2*h;
+      drawTriangle(ctx, x - s,   y3 + offUp, true, colors[4], s);
+      drawTriangle(ctx, x - s/2, y3 + offDown, false, colors[5], s);
+      drawTriangle(ctx, x,       y3 + offUp, true, colors[6], s);
+      drawTriangle(ctx, x + s/2, y3 + offDown, false, colors[7], s);
+      drawTriangle(ctx, x + s,   y3 + offUp, true, colors[8], s);
+    } else {
+      const y1 = y;
+      drawTriangle(ctx, x - s,   y1 + offDown, false, colors[0], s);
+      drawTriangle(ctx, x - s/2, y1 + offUp,   true,  colors[2], s);
+      drawTriangle(ctx, x,       y1 + offDown, false, colors[3], s);
+      drawTriangle(ctx, x + s/2, y1 + offUp,   true,  colors[7], s);
+      drawTriangle(ctx, x + s,   y1 + offDown, false, colors[8], s);
+
+      const y2 = y + h;
+      drawTriangle(ctx, x - s/2, y2 + offDown, false, colors[1], s);
+      drawTriangle(ctx, x,       y2 + offUp,   true,  colors[5], s);
+      drawTriangle(ctx, x + s/2, y2 + offDown, false, colors[6], s);
+
+      const y3 = y + 2*h;
+      drawTriangle(ctx, x,       y3 + offDown, false, colors[4], s);
+    }
+  }
+
+  // ----- V -----
+  const FACE_CENTER_STICKERS = {
+    0: [[0,0],[1,0],[2,0]],
+    1: [[0,1],[2,1],[3,0]],
+    2: [[0,2],[3,1],[1,1]],
+    3: [[1,2],[3,2],[2,2]]
+  };
+  const FACE_EDGE_LOCS = {
+    0: [0,1,2],
+    1: [0,3,4],
+    2: [1,3,5],
+    3: [2,4,5]
+  };
+
+  function faceHasV(state, faceId){
+    const target = COLORS[faceId];
+
+    for(const [cIdx, viewIdx] of FACE_CENTER_STICKERS[faceId]){
+      const col = getCenterColor(state, cIdx, viewIdx);
+      if(col[0]!==target[0] || col[1]!==target[1] || col[2]!==target[2]){
+        return {ok:false, nOk:0, edges:[]};
+      }
+    }
+
+    const okEdges = [];
+    for(const loc of FACE_EDGE_LOCS[faceId]){
+      if(state.edges_perm[loc] === loc && state.edges_orient[loc] === 0){
+        okEdges.push(EDGE_NAMES[loc]);
+      }
+    }
+
+    return {ok: okEdges.length >= 2, nOk: okEdges.length, edges: okEdges};
+  }
+
+  // ----- SOLVEUR -----
+  function reducedKey(st){
+    return st.edges_perm.join(",") + "|" + st.edges_orient.join(",") + "|" + st.centers.join(",");
+  }
+  function formatSeq(seq){
+    return seq.length ? seq.join(" ") : "(déjà en V)";
+  }
+
+  class VSolver{
+    constructor(startState, maxDepth){
+      this.startState = startState.clone();
+      this.maxDepth = maxDepth;
+
+      this.moves = ["U","U'","L","L'","R","R'","B","B'"];
+      this.queue = [];
+      this.qi = 0;
+      this.visited = new Set();
+
+      this.solutions = {0:[],1:[],2:[],3:[]};
+      this._solset = {0:new Set(),1:new Set(),2:new Set(),3:new Set()};
+
+      this.done = false;
+      this.exhausted = false;
+      this.nodesExpanded = 0;
+
+      this._init();
+    }
+
+    _init(){
+      const k = reducedKey(this.startState);
+      this.queue.push([this.startState, []]);
+      this.visited.add(k);
+      this._maybeRecord(this.startState, []);
+    }
+
+    _allDone(){
+      return [0,1,2,3].every(f => this.solutions[f].length >= 3);
+    }
+
+    _maybeRecord(st, seq){
+      const seqStr = formatSeq(seq);
+
+      for(const faceId of [0,1,2,3]){
+        if(this.solutions[faceId].length >= 3) continue;
+
+        const res = faceHasV(st, faceId);
+        if(!res.ok) continue;
+
+        if(this._solset[faceId].has(seqStr)) continue;
+
+        this._solset[faceId].add(seqStr);
+        this.solutions[faceId].push({
+          seq: seqStr,
+          length: seq.length,
+          edgesOk: res.nOk,
+          edgesList: res.edges
+        });
+      }
+    }
+
+    step(maxNodes){
+      if(this.done) return;
+
+      for(let i=0;i<maxNodes;i++){
+        if(this.qi >= this.queue.length){
+          this.done = true;
+          this.exhausted = true;
+          return;
+        }
+
+        const [st, seq] = this.queue[this.qi++];
+        this.nodesExpanded++;
+
+        this._maybeRecord(st, seq);
+        if(this._allDone()){
+          this.done = true;
+          return;
+        }
+
+        if(seq.length >= this.maxDepth) continue;
+
+        const lastBase = seq.length ? seq[seq.length-1][0] : null;
+
+        for(const mv of this.moves){
+          if(lastBase && mv[0] === lastBase) continue;
+
+          const ns = st.clone();
+          ns.applyMove(mv);
+
+          const k = reducedKey(ns);
+          if(this.visited.has(k)) continue;
+
+          this.visited.add(k);
+          this.queue.push([ns, seq.concat([mv])]);
+        }
+
+        if(this.qi > 40000){
+          this.queue = this.queue.slice(this.qi);
+          this.qi = 0;
+        }
+      }
+
+      if(this._allDone()) this.done = true;
+    }
+  }
+
+  // ----- UI -----
+  const cv = document.getElementById("cv");
+  const statusEl = document.getElementById("status");
+  const resultsEl = document.getElementById("results");
+  const depthInput = document.getElementById("depthInput");
+
+  const state = new PyraminxState();
+  let solver = null;
+  let lastSolutions = {0:[],1:[],2:[],3:[]};
+
+  let ctx = null;
+  let canvasW = 360;
+  let canvasH = 420;
+  let scale = 36;
+
+  function computeLayout(){
+    const rect = cv.getBoundingClientRect();
+    const w = Math.max(320, Math.floor(rect.width));
+
+    // Choix de scale basé sur la largeur (garantie de ne pas déborder)
+    // Largeur totale du montage = 9*scale
+    let s = Math.floor((w * 0.96) / 9);
+    s = Math.max(24, Math.min(56, s));
+    scale = s;
+
+    const hTri = scale * Math.sqrt(3) / 2;
+    const heightFace = 3 * hTri;
+    const usedH = 2 * heightFace;
+
+    // Canvas height: assez pour afficher le puzzle + marge
+    const topPad = 54;
+    const bottomPad = 18;
+    const minH = Math.ceil(usedH + topPad + bottomPad);
+    const preferredH = Math.floor(window.innerHeight * 0.48);
+    const h = Math.max(minH, preferredH);
+
+    canvasW = w;
+    canvasH = Math.max(320, Math.min(720, h));
+  }
+
+  function resizeCanvas(){
+    computeLayout();
+
+    const dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+    cv.style.width = canvasW + "px";
+    cv.style.height = canvasH + "px";
+    cv.width = Math.floor(canvasW * dpr);
+    cv.height = Math.floor(canvasH * dpr);
+
+    ctx = cv.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function buildMoveButtons(){
+    const grid = document.getElementById("moveGrid");
+    grid.innerHTML = "";
+
+    const moves = ["U","L","R","B"];
+    const labels = [];
+    for(const m of moves){
+      labels.push(m);
+      labels.push(m+"'");
+      labels.push(m.toLowerCase());
+      labels.push(m.toLowerCase()+"'");
+    }
+
+    for(const lab of labels){
+      const b = document.createElement("button");
+      b.textContent = lab;
+      b.addEventListener("click", () => {
+        state.applyMove(lab);
+        solver = null;
+        lastSolutions = {0:[],1:[],2:[],3:[]};
+        updateResults();
+      });
+      grid.appendChild(b);
+    }
+  }
+
+  function updateResults(){
+    if(!solver){
+      statusEl.textContent = "—";
+    }else if(!solver.done){
+      statusEl.textContent = `Recherche… nodes=${solver.nodesExpanded}  visited=${solver.visited.size}  (maxDepth=${solver.maxDepth})`;
+    }else if(solver.exhausted){
+      statusEl.textContent = `Fin (épuisée). nodes=${solver.nodesExpanded}  visited=${solver.visited.size}`;
+    }else{
+      statusEl.textContent = `Terminé. nodes=${solver.nodesExpanded}  visited=${solver.visited.size}`;
+    }
+
+    resultsEl.innerHTML = "";
+    for(const faceId of [0,1,2,3]){
+      const blk = document.createElement("div");
+      blk.className = "faceBlock";
+
+      const title = document.createElement("div");
+      title.className = "faceTitle";
+
+      const dot = document.createElement("span");
+      dot.className = "dot";
+      dot.style.background = rgb(COLORS[faceId]);
+
+      const txt = document.createElement("span");
+      txt.textContent = FACE_NAMES[faceId];
+
+      title.appendChild(dot);
+      title.appendChild(txt);
+      blk.appendChild(title);
+
+      const sols = lastSolutions[faceId] || [];
+      if(!sols.length){
+        const d = document.createElement("div");
+        d.className = "dash";
+        d.textContent = "—";
+        blk.appendChild(d);
+      }else{
+        const ol = document.createElement("ol");
+        for(let i=0;i<Math.min(3, sols.length);i++){
+          const s = sols[i];
+          const li = document.createElement("li");
+          li.textContent = `(${s.length}) ${s.seq}   [${s.edgesOk}/3:${s.edgesList.join(",")}]`;
+          ol.appendChild(li);
+        }
+        blk.appendChild(ol);
+      }
+
+      resultsEl.appendChild(blk);
+    }
+  }
+
+  function draw(){
+    if(!ctx) return;
+
+    ctx.fillStyle = rgb(DARK_GRAY);
+    ctx.fillRect(0,0,canvasW,canvasH);
+
+    const hTri = scale * Math.sqrt(3) / 2;
+    const heightFace = 3 * hTri;
+
+    // IMPORTANT: centrage garanti (évite le débordement horizontal)
+    const usedW = 9 * scale;            // largeur totale du montage
+    const usedH = 2 * heightFace;       // hauteur pour Front + Down
+
+    const topPad = 54;
+    const bottomPad = 18;
+
+    const fx = (canvasW - usedW) / 2 + 4.5 * scale;  // centre géométrique du montage
+    const extraH = (canvasH - topPad - bottomPad - usedH);
+    const fy = topPad + Math.max(0, extraH / 2);     // top de la face Front
+
+    // Espacement entre faces = 3*scale (comme le code Pygame)
+    const widthFace = 3 * scale;
+
+    drawFace(ctx, fx, fy,               getFaceColors(state,0), false, scale); // Front
+    drawFace(ctx, fx, fy + heightFace,  getFaceColors(state,3), true,  scale); // Down
+    drawFace(ctx, fx - widthFace, fy,   getFaceColors(state,2), false, scale); // Left
+    drawFace(ctx, fx + widthFace, fy,   getFaceColors(state,1), false, scale); // Right
+
+    ctx.fillStyle = "rgb(255,255,255)";
+    ctx.font = "800 16px Arial";
+    ctx.fillText("Simulateur Pyraminx (portrait)", 14, 22);
+    ctx.font = "12px Arial";
+    ctx.fillStyle = "rgb(200,200,200)";
+    ctx.fillText(`scale=${scale}`, 14, 40);
+  }
+
+  function tick(){
+    if(solver && !solver.done){
+      solver.step(SOLVER_NODES_PER_FRAME);
+      lastSolutions = solver.solutions;
+      updateResults();
+    }
+    draw();
+    requestAnimationFrame(tick);
+  }
+
+  document.getElementById("resetBtn").addEventListener("click", () => {
+    state.reset();
+    solver = null;
+    lastSolutions = {0:[],1:[],2:[],3:[]};
+    updateResults();
+  });
+
+  document.getElementById("solveBtn").addEventListener("click", () => {
+    const md = Math.max(0, Math.min(14, parseInt(depthInput.value || "10", 10)));
+    solver = new VSolver(state, md);
+    lastSolutions = solver.solutions;
+    updateResults();
+  });
+
+  buildMoveButtons();
+  updateResults();
+
+  const doResize = () => { resizeCanvas(); draw(); };
+  window.addEventListener("resize", doResize);
+  window.addEventListener("orientationchange", doResize);
+
+  requestAnimationFrame(() => {
+    doResize();
+    requestAnimationFrame(tick);
+  });
+})();
+</script>
+</body>
+</html>
